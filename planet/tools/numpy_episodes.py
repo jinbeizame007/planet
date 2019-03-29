@@ -62,9 +62,7 @@ def numpy_episodes(
   chunking = lambda x: tf.data.Dataset.from_tensor_slices(
       chunk_sequence(x, shape[1], True, num_chunks))
   def sequence_preprocess_fn(sequence):
-    if preprocess_fn:
-      with tf.device('/cpu:0'):
-        sequence['image'] = preprocess_fn(sequence['image'])
+    sequence['image'] = sequence['observ']
     return sequence
   train = train.flat_map(chunking)
   train = train.shuffle(100 * shape[0])

@@ -61,7 +61,7 @@ def finger_spin(config, params):
 def cheetah_run(config, params):
   action_repeat = params.get('action_repeat', 4)
   max_length = 1000 // action_repeat
-  state_components = ['reward', 'position', 'velocity']
+  state_components = ['reward']#, 'position', 'velocity']
   env_ctor = functools.partial(
       _dm_control_env, action_repeat, max_length, 'cheetah', 'run')
   return Task('cheetah_run', env_ctor, max_length, state_components)
@@ -97,8 +97,10 @@ def humanoid_walk(config, params):
 
 
 def _dm_control_env(action_repeat, max_length, domain, task):
-  from dm_control import suite
-  env = control.wrappers.DeepMindWrapper(suite.load(domain, task), (64, 64))
+  import gym
+  import pybullet_envs
+  #def env_ctor():
+  env = control.wrappers.DeepMindWrapper(gym.make('HalfCheetahBulletEnv-v0'), (64, 64))
   env = control.wrappers.ActionRepeat(env, action_repeat)
   env = control.wrappers.LimitDuration(env, max_length)
   env = control.wrappers.PixelObservations(env, (64, 64), np.uint8, 'image')

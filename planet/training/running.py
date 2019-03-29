@@ -220,6 +220,7 @@ class Run(object):
     """
     if not self._logdir:
       return True
+    print(self._logdir)
     if tf.gfile.Exists(os.path.join(self._logdir, 'PING')):
       return False
     if tf.gfile.Exists(os.path.join(self._logdir, 'DONE')):

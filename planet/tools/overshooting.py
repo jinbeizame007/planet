@@ -19,6 +19,7 @@ from __future__ import print_function
 import functools
 
 import numpy as np
+import keras
 import tensorflow as tf
 
 from planet.tools import nested
@@ -75,9 +76,13 @@ def overshooting(
       tf.convert_to_tensor(ignore_input),
       lambda: tf.zeros_like(use_obs, tf.bool),
       lambda: use_obs)
+  print(cell._layers)
   (prior, posterior), _ = tf.nn.dynamic_rnn(
       cell, (embedded, prev_action, use_obs), length, dtype=tf.float32,
       swap_memory=True)
+  #inputs = tf.concat([embedded, prev_action, tf.cast(use_obs, tf.float32)], axis=-1)
+  #(prior, posterior), _ = keras.layers.RNN(cell)(inputs, )
+  #(prior, posterior), = cell((embedded, prev_action, use_obs), 
 
   # Arrange inputs for every iteration in the open loop unroll. Every loop
   # iteration below corresponds to one row in the docstring illustration.

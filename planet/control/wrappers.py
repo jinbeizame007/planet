@@ -87,15 +87,16 @@ class ConcatObservation(object):
 
   def step(self, action):
     obs, reward, done, info = self._env.step(action)
-    obs = self._select_keys(obs)
+    #obs = self._select_keys(obs)QAW
     return obs, reward, done, info
 
   def reset(self):
     obs = self._env.reset()
-    obs = self._select_keys(obs)
+    #obs = self._select_keys(obs)
     return obs
 
   def _select_keys(self, obs):
+    print(obs, self._keys)
     return np.concatenate([obs[key] for key in self._keys], 0)
 
 
@@ -128,7 +129,6 @@ class SelectObservations(object):
 class PixelObservations(object):
 
   def __init__(self, env, size=(64, 64), dtype=np.uint8, key='image'):
-    assert isinstance(env.observation_space, gym.spaces.Dict)
     self._env = env
     self._size = size
     self._dtype = dtype
@@ -152,19 +152,14 @@ class PixelObservations(object):
 
   def step(self, action):
     obs, reward, done, info = self._env.step(action)
-    obs[self._key] = self._render_image()
     return obs, reward, done, info
 
   def reset(self):
     obs = self._env.reset()
-    obs[self._key] = self._render_image()
     return obs
 
   def _render_image(self):
     image = self._env.render('rgb_array')
-    if image.shape[:2] != self._size:
-      kwargs = dict(mode='edge', order=1, preserve_range=True)
-      image = skimage.transform.resize(image, self._size, **kwargs)
     if self._dtype and image.dtype != self._dtype:
       if image.dtype in (np.float32, np.float64) and self._dtype == np.uint8:
         image = (image * 255).astype(self._dtype)
@@ -240,24 +235,19 @@ class DeepMindWrapper(object):
         action_spec.minimum, action_spec.maximum, dtype=np.float32)
 
   def step(self, action):
-    time_step = self._env.step(action)
-    obs = dict(time_step.observation)
-    reward = time_step.reward or 0
-    done = time_step.last()
-    info = {'discount': time_step.discount}
+    obs, reward, done, info = self._env.step(action)
     return obs, reward, done, info
 
   def reset(self):
-    time_step = self._env.reset()
-    return dict(time_step.observation)
+    obs = self._env.reset()
+    return obs
 
   def render(self, *args, **kwargs):
-    if kwargs.get('mode', 'rgb_array') != 'rgb_array':
-      raise ValueError("Only render mode 'rgb_array' is supported.")
+    #if kwargs.get('mode', 'rgb_array') != 'rgb_array':
+    #  raise ValueError("Only render mode 'rgb_array' is supported.")
     del args  # Unused
     del kwargs  # Unused
-    return self._env.physics.render(
-        *self._render_size, camera_id=self._camera_id)
+    return self._env.render()
 
 
 class LimitDuration(object):

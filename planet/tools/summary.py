@@ -79,7 +79,7 @@ def data_summaries(data, postprocess_fn, histograms=False, name='data'):
     image = data['image']
     if postprocess_fn:
       image = postprocess_fn(image)
-    summaries.append(image_strip_summary.image_strip_summary('image', image))
+    #summaries.append(image_strip_summary.image_strip_summary('image', image))
   return summaries
 
 
@@ -130,12 +130,14 @@ def image_summaries(dist, target, name='image', max_batch=10):
     image = dist.mode()[:max_batch]
     change = tf.concat([empty_frame, image[:, 1:] - image[:, :-1]], 1)
     error = image[:max_batch] - target[:max_batch]
+    """
     summaries.append(image_strip_summary.image_strip_summary(
         'prediction', image))
     summaries.append(image_strip_summary.image_strip_summary(
         'change', (change + 1) / 2))
     summaries.append(image_strip_summary.image_strip_summary(
         'error', (error + 1) / 2))
+    """
   return summaries
 
 

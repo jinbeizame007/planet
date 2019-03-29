@@ -17,6 +17,7 @@ from __future__ import division
 from __future__ import print_function
 
 import numpy as np
+import keras
 import tensorflow as tf
 from tensorflow_probability import distributions as tfd
 
@@ -25,31 +26,26 @@ from planet import tools
 
 def encoder(obs):
   """Extract deterministic features from an observation."""
-  kwargs = dict(strides=2, activation=tf.nn.relu)
-  hidden = tf.reshape(obs['image'], [-1] + obs['image'].shape[2:].as_list())
-  hidden = tf.layers.conv2d(hidden, 32, 4, **kwargs)
-  hidden = tf.layers.conv2d(hidden, 64, 4, **kwargs)
-  hidden = tf.layers.conv2d(hidden, 128, 4, **kwargs)
-  hidden = tf.layers.conv2d(hidden, 256, 4, **kwargs)
-  hidden = tf.layers.flatten(hidden)
-  assert hidden.shape[1:].as_list() == [1024], hidden.shape.as_list()
-  hidden = tf.reshape(hidden, tools.shape(obs['image'])[:2] + [
-      np.prod(hidden.shape[1:].as_list())])
+  obs = obs['image']
+  hidden = tf.layers.dense(obs, 500, tf.nn.relu)#keras.layers.Dense(500, activation='relu')(obs)
+  hidden = tf.layers.dense(hidden, 500, tf.nn.relu)#keras.layers.Dense(500, activation='relu')(hidden)
+  hidden = tf.layers.dense(hidden, 1024, None)#keras.layers.Dense(1024)(hidden)
   return hidden
 
 
 def decoder(state, data_shape):
   """Compute the data distribution of an observation from its state."""
-  kwargs = dict(strides=2, activation=tf.nn.relu)
-  hidden = tf.layers.dense(state, 1024, None)
-  hidden = tf.reshape(hidden, [-1, 1, 1, hidden.shape[-1].value])
-  hidden = tf.layers.conv2d_transpose(hidden, 128, 5, **kwargs)
-  hidden = tf.layers.conv2d_transpose(hidden, 64, 5, **kwargs)
-  hidden = tf.layers.conv2d_transpose(hidden, 32, 6, **kwargs)
-  hidden = tf.layers.conv2d_transpose(hidden, 3, 6, strides=2)
+  #hidden = keras.layers.Dense(500, activation='relu')(state)
+  #hidden = keras.layers.Dense(500, activation='relu')(hidden)
+  #hidden = keras.layers.Dense(26)(hidden)
+  hidden = tf.layers.dense(state, 500, tf.nn.relu)
+  hidden = tf.layers.dense(hidden, 500, tf.nn.relu)
+  hidden = tf.layers.dense(hidden, 26, None)
   mean = hidden
-  assert mean.shape[1:].as_list() == [64, 64, 3], mean.shape
+  print()
+  print('bbb',tools.shape(state)[:-1], data_shape, len(data_shape))
   mean = tf.reshape(mean, tools.shape(state)[:-1] + data_shape)
   dist = tools.MSEDistribution(mean)
   dist = tfd.Independent(dist, len(data_shape))
+  print(dist)
   return dist
