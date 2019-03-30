@@ -27,6 +27,8 @@ import uuid
 
 import gym
 import gym.spaces
+import pybullet
+import pybullet_envs
 import numpy as np
 import skimage.transform
 import tensorflow as tf
@@ -53,12 +55,14 @@ class ObservationDict(object):
     return self._env.action_space
 
   def step(self, action):
-    obs, reward, done, info = self._env.step(action)
+    _, reward, done, info = self._env.step(action)
+    obs = self._render_image()
     obs = {self._key: np.array(obs)}
     return obs, reward, done, info
 
   def reset(self):
-    obs = self._env.reset()
+    _ = self._env.reset()
+    obs = self._render_image()
     obs = {self._key: np.array(obs)}
     return obs
 
@@ -86,13 +90,15 @@ class ConcatObservation(object):
     return gym.spaces.Box(low, high, dtype=dtypes[0])
 
   def step(self, action):
-    obs, reward, done, info = self._env.step(action)
-    obs = self._select_keys(obs)
+    _, reward, done, info = self._env.step(action)
+    obs = self._render_image()
+    #obs = self._select_keys(obs)
     return obs, reward, done, info
 
   def reset(self):
-    obs = self._env.reset()
-    obs = self._select_keys(obs)
+    _ = self._env.reset()
+    obs = self._render_image()
+    #obs = self._select_keys(obs)
     return obs
 
   def _select_keys(self, obs):
@@ -115,20 +121,24 @@ class SelectObservations(object):
     return self._env.action_space
 
   def step(self, action, *args, **kwargs):
-    obs, reward, done, info = self._env.step(action, *args, **kwargs)
-    obs = {key: obs[key] for key in self._keys}
+    _, reward, done, info = self._env.step(action, *args, **kwargs)
+    obs = dict()
+    obs['image'] = self._render_image()
+    #obs = {key: obs[key] for key in self._keys}
     return obs, reward, done, info
 
   def reset(self, *args, **kwargs):
-    obs = self._env.reset(*args, **kwargs)
-    obs = {key: obs[key] for key in self._keys}
+    _ = self._env.reset(*args, **kwargs)
+    obs = dict()
+    obs['image'] = self._render_image()
+    #obs = {key: obs[key] for key in self._keys}
     return obs
 
 
 class PixelObservations(object):
 
   def __init__(self, env, size=(64, 64), dtype=np.uint8, key='image'):
-    assert isinstance(env.observation_space, gym.spaces.Dict)
+    #assert isinstance(env.observation_space, gym.spaces.Dict)
     self._env = env
     self._size = size
     self._dtype = dtype
@@ -144,19 +154,23 @@ class PixelObservations(object):
     spaces = self._env.observation_space.spaces.copy()
     assert self._key not in spaces
     spaces[self._key] = image
-    return gym.spaces.Dict(spaces)
+    #return gym.spaces.Dict(spaces)
+    ob_space = gym.spaces.Dict(spaces)
+    return [3,60,60]#ob_space
 
   @property
   def action_space(self):
     return self._env.action_space
 
   def step(self, action):
-    obs, reward, done, info = self._env.step(action)
+    _, reward, done, info = self._env.step(action)
+    obs = dict()
     obs[self._key] = self._render_image()
     return obs, reward, done, info
 
   def reset(self):
-    obs = self._env.reset()
+    _ = self._env.reset()
+    obs = dict()
     obs[self._key] = self._render_image()
     return obs
 
@@ -227,11 +241,19 @@ class DeepMindWrapper(object):
 
   @property
   def observation_space(self):
-    components = {}
-    for key, value in self._env.observation_spec().items():
-      components[key] = gym.spaces.Box(
-          -np.inf, np.inf, value.shape, dtype=np.float32)
-    return gym.spaces.Dict(components)
+    high = {np.uint8: 255, np.float: 1.0}[self._dtype]
+    image = gym.spaces.Box(0, high, self.render_size + (3,), dtype=self._dtype)
+    spaces = self._env.observation_space.spaces.copy()
+    assert self._key not in spaces
+    spaces[self._key] = image
+    return gym.spaces.Dict(spaces)
+    #ob_space = gym.spaces.Box(spaces)
+    #return ob_space
+    #components = {}
+    #for key, value in self._env.observation_spec().items():
+    #  components[key] = gym.spaces.Box(
+    #      -np.inf, np.inf, value.shape, dtype=np.float32)
+    #return gym.spaces.Dict(components)
 
   @property
   def action_space(self):
@@ -240,24 +262,23 @@ class DeepMindWrapper(object):
         action_spec.minimum, action_spec.maximum, dtype=np.float32)
 
   def step(self, action):
-    time_step = self._env.step(action)
-    obs = dict(time_step.observation)
-    reward = time_step.reward or 0
-    done = time_step.last()
-    info = {'discount': time_step.discount}
+    _, reward, done, info = self._env.step(action)
+    obs = self.env.render(mode='rgb_array')
     return obs, reward, done, info
 
   def reset(self):
-    time_step = self._env.reset()
-    return dict(time_step.observation)
+    _ = self._env.reset()
+    obs = self.env.render(mode='rgb_array')
+    return obs
 
   def render(self, *args, **kwargs):
-    if kwargs.get('mode', 'rgb_array') != 'rgb_array':
-      raise ValueError("Only render mode 'rgb_array' is supported.")
+    #if kwargs.get('mode', 'rgb_array') != 'rgb_array':
+    #  raise ValueError("Only render mode 'rgb_array' is supported.")
     del args  # Unused
     del kwargs  # Unused
-    return self._env.physics.render(
-        *self._render_size, camera_id=self._camera_id)
+    #return self._env.physics.render(
+    #    *self._render_size, camera_id=self._camera_id)
+    return self._env.render('rgb_array')
 
 
 class LimitDuration(object):

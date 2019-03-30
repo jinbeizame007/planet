@@ -151,6 +151,7 @@ def simulate_step(batch_env, algo, log=True, reset=False):
     Returns:
       Summary tensor, new score tensor, and new length tensor.
     """
+
     prevob = batch_env.observ + 0  # Ensure a copy of the variable value.
     agent_indices = tf.range(len(batch_env))
     action, step_summary = algo.perform(agent_indices, prevob)
