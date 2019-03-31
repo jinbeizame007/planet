@@ -96,7 +96,6 @@ class ConcatObservation(object):
     return obs
 
   def _select_keys(self, obs):
-    print(obs, self._keys)
     return np.concatenate([obs[key] for key in self._keys], 0)
 
 

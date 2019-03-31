@@ -37,7 +37,7 @@ def define_summaries(graph, config):
     mean = config.postprocess_fn(dist.mean())
     dist = tfd.Independent(tfd.Normal(mean, 1.0), len(dist.batch_shape))
     return dist
-  heads['image'] = lambda features: transform(graph.heads['image'](features))
+  #heads['image'] = lambda features: transform(graph.heads['image'](features))
 
   with tf.variable_scope('general'):
     summaries += summary.data_summaries(graph.data, config.postprocess_fn)

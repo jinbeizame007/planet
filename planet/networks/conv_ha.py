@@ -27,8 +27,8 @@ from planet import tools
 def encoder(obs):
   """Extract deterministic features from an observation."""
   obs = obs['image']
-  hidden = tf.layers.dense(obs, 500, tf.nn.relu)#keras.layers.Dense(500, activation='relu')(obs)
-  hidden = tf.layers.dense(hidden, 500, tf.nn.relu)#keras.layers.Dense(500, activation='relu')(hidden)
+  hidden = tf.layers.dense(obs, 1024, tf.nn.relu)#keras.layers.Dense(500, activation='relu')(obs)
+  hidden = tf.layers.dense(hidden, 1024, tf.nn.relu)#keras.layers.Dense(500, activation='relu')(hidden)
   hidden = tf.layers.dense(hidden, 1024, None)#keras.layers.Dense(1024)(hidden)
   return hidden
 
@@ -42,10 +42,7 @@ def decoder(state, data_shape):
   hidden = tf.layers.dense(hidden, 500, tf.nn.relu)
   hidden = tf.layers.dense(hidden, 26, None)
   mean = hidden
-  print()
-  print('bbb',tools.shape(state)[:-1], data_shape, len(data_shape))
   mean = tf.reshape(mean, tools.shape(state)[:-1] + data_shape)
   dist = tools.MSEDistribution(mean)
   dist = tfd.Independent(dist, len(data_shape))
-  print(dist)
   return dist
